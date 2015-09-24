@@ -17,10 +17,6 @@ def center_data(data):
     data = data - numpy.tile(data.mean(axis=0), (N, 1));
     return data
 
-#training_iterations=100,
-#input_directory="/Users/kzhai/Workspace/PyHogwarts/input/ap",
-#output_directory="/Users/kzhai/Workspace/PyHogwarts/output",
-
 def parse_args():
     parser = optparse.OptionParser()
     parser.set_defaults(# parameter set 1
@@ -29,6 +25,7 @@ def parse_args():
                         
                         # parameter set 2
                         training_iterations=-1,
+                        truncation_level=-1,
                         snapshot_interval=10,
 
                         # parameter set 3
@@ -39,6 +36,7 @@ def parse_args():
                         # parameter set 4
                         # disable_alpha_theta_update=False,
                         inference_mode=1,
+                        sampler_type=1,
                         )
     # parameter set 1
     parser.add_option("--input_directory", type="string", dest="input_directory",
@@ -53,8 +51,10 @@ def parse_args():
                       # help="total number of topics [-1]");
     parser.add_option("--training_iterations", type="int", dest="training_iterations",
                       help="total number of iterations [-1]");
+    parser.add_option("--truncation_level", type="int", dest="truncation_level",
+                      help="truncation interval [-1], ignored in monte carlo inference mode");
     parser.add_option("--snapshot_interval", type="int", dest="snapshot_interval",
-                      help="snapshot interval [10]");                      
+                      help="snapshot interval [10]");
                       
     # parameter set 3
     parser.add_option("--alpha", type="float", dest="alpha",
@@ -68,10 +68,18 @@ def parse_args():
     # parser.add_option("--disable_alpha_theta_update", action="store_true", dest="disable_alpha_theta_update",
                       # help="disable alpha (hyper-parameter for Dirichlet distribution of topics) update");
     parser.add_option("--inference_mode", type="int", dest="inference_mode",
-                      help="inference mode [ " + 
-                            "1 (default): monte carlo, " + 
-                            "2: variational bayes " + 
+                      help="inference mode [ " +
+                            "1 (default): monte carlo, " +
+                            "2 : variational bayes " + 
                             "]");
+                            
+    parser.add_option("--sampler_type", type="int", dest="inference_mode",
+                      help="inference mode [ " +
+                            "1 (default): collapsed gibbs sampling, " +
+                            "2 : semi-collapsed gibbs sampling, " +
+                            "3 : uncollapsed gibbs sampling " +
+                            "], ignored in variational bayes inference mode"
+                            );
     # parser.add_option("--inference_mode", action="store_true", dest="inference_mode",
     #                  help="run latent Dirichlet allocation in lda mode");
 
@@ -93,6 +101,11 @@ def main():
     # parameter set 4
     # disable_alpha_theta_update = options.disable_alpha_theta_update;
     inference_mode = options.inference_mode;
+    if inference_mode==1:
+        sampler_type = options.sampler_type
+    elif inference_mode==2:
+        assert(options.truncation_level>0)
+        truncation_level = options.truncation_level
     
     # parameter set 1
     # assert(options.dataset_name!=None);
@@ -134,8 +147,10 @@ def main():
     suffix += "-sa%f" % (sigma_a);
     suffix += "-sx%f" % (sigma_x);
     suffix += "-im%d" % (inference_mode);
-    # suffix += "-%s" % (resample_topics);
-    # suffix += "-%s" % (hash_oov_words);
+    if inference_mode==1:
+        suffix += "-st%s" % (sampler_type);
+    elif inference_mode==2:
+        suffix += "-T%d" % (truncation_level);
     suffix += "/";
     
     output_directory = os.path.join(output_directory, suffix);
@@ -161,6 +176,10 @@ def main():
     options_output_file.write("sigma_x=" + str(sigma_x) + "\n");
     # parameter set 4
     options_output_file.write("inference_mode=%d\n" % (inference_mode));
+    if inference_mode==1:
+        options_output_file.write("sampler_type=%d\n" % (sampler_type));
+    elif inference_mode==2:
+        options_output_file.write("truncation_level=%d\n" % (truncation_level));
     options_output_file.close()
 
     print "========== ========== ========== ========== =========="
@@ -179,37 +198,36 @@ def main():
     print "sigma_x=" + str(sigma_x)
     # parameter set 4
     print "inference_mode=%d" % (inference_mode)
+    if inference_mode==1:
+        print "sampler_type=%d" % (sampler_type)
+    elif inference_mode==2:
+        print "truncation_level=%d" % (truncation_level)
     print "========== ========== ========== ========== =========="
     
     # if inference_mode==0:
         # import hybrid
         # ibp_inferencer = hybrid.Hybrid();
     if inference_mode == 1:
-        import collapsed_gibbs
-        
-        # initialize the model
-        ibp_inferencer = collapsed_gibbs.CollapsedGibbs();
-        # ibp_inferencer = monte_carlo.MonteCarlo(alpha_hyper_parameter, sigma_x_hyper_parameter, sigma_a_hyper_parameter, True);
+        if sampler_type==1:
+            import collapsed_gibbs
+            ibp_inferencer = collapsed_gibbs.CollapsedGibbs();
+        elif sampler_type == 2:
+            import semicollapsed_gibbs
+            ibp_inferencer = semicollapsed_gibbs.SemiCollapsedGibbs();
+        elif sampler_type == 3:
+            import uncollapsed_gibbs
+            ibp_inferencer = uncollapsed_gibbs.UncollapsedGibbs();
+        else:
+            sys.stderr.write("error: unrecognized sampler type %d...\n" % (sampler_type));
+            return;
+        ibp_inferencer._initialize(train_data, alpha, sigma_a, sigma_x, initial_Z=None, A_prior=None);
     elif inference_mode == 2:
-        import uncollapsed_gibbs
-        
-        # initialize the model
-        ibp_inferencer = uncollapsed_gibbs.UncollapsedGibbs();
-        # ibp_inferencer = monte_carlo.MonteCarlo(alpha_hyper_parameter, sigma_x_hyper_parameter, sigma_a_hyper_parameter, True);
-    elif inference_mode == 3:
-        import semicollapsed_gibbs
-        
-        # initialize the model
-        ibp_inferencer = semicollapsed_gibbs.SemiCollapsedGibbs();
-        # ibp_inferencer = monte_carlo.MonteCarlo(alpha_hyper_parameter, sigma_x_hyper_parameter, sigma_a_hyper_parameter, True);
-    elif inference_mode == 3:
         import variational_bayes
         ibp_inferencer = variational_bayes.VariationalBayes();
+        ibp_inferencer._initialize(train_data, truncation_level, alpha, sigma_a, sigma_x);
     else:
         sys.stderr.write("error: unrecognized inference mode %d...\n" % (inference_mode));
         return;
-    
-    ibp_inferencer._initialize(train_data, sigma_a, sigma_x, initial_Z=None, A_prior=None);
     
     for iteration in xrange(training_iterations):
         log_likelihood = ibp_inferencer.learning();
@@ -219,40 +237,10 @@ def main():
         if (ibp_inferencer._counter % snapshot_interval == 0):
             ibp_inferencer.export_snapshot(output_directory);
 
-        print ibp_inferencer._Z.sum(axis=0)
+        #print ibp_inferencer._Z.sum(axis=0)
         
     model_snapshot_path = os.path.join(output_directory, 'model-' + str(ibp_inferencer._counter));
     cPickle.dump(ibp_inferencer, open(model_snapshot_path, 'wb'));
 
-    '''
-    # If matplotlib is installed, plot ground truth vs learned factors
-    import matplotlib.pyplot as P
-    from scaled_image import scaledimage
-    
-    # Intensity plots of
-    # -ground truth factor-feature weights (top)
-    # -learned factor-feature weights (bottom)
-    K = max(len(true_weights), len(ibp._A))
-    (fig, subaxes) = matplotlib.pyplot.subplots(2, K)
-    for sa in subaxes.flatten():
-        sa.set_visible(False)
-    fig.suptitle('Ground truth (top) vs learned factors (bottom)')
-    for (idx, trueFactor) in enumerate(true_weights):
-        ax = subaxes[0, idx]
-        ax.set_visible(True)
-        scaledimage(trueFactor.reshape(6, 6),
-                    pixwidth=3, ax=ax)
-    for (idx, learnedFactor) in enumerate(ibp._A):
-        ax = subaxes[1, idx]
-        scaledimage(learnedFactor.reshape(6, 6),
-                    pixwidth=3, ax=ax)
-        ax.set_visible(True)
-    matplotlib.pyplot.show()
-    '''
-    
-"""
-run IBP on the synthetic 'cambridge bars' dataset, used in the original paper.
-"""
 if __name__ == '__main__':
     main()
-    

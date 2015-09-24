@@ -75,13 +75,16 @@ def main():
         ax.yaxis.set_ticks_position('left')
         ax.xaxis.set_ticks_position('bottom')
         '''
+
+        matrix_A = ibp_inferencer._A;
+        #matrix_A = ibp_inferencer._phi_mean;
         
-        K = len(ibp_inferencer._A);
+        K = len(matrix_A);
         (fig, subaxes) = matplotlib.pyplot.subplots(1, K)
         for sa in subaxes.flatten():
             sa.set_visible(False)
             
-        for (idx, learnedFactor) in enumerate(ibp_inferencer._A):
+        for (idx, learnedFactor) in enumerate(matrix_A):
             print idx, learnedFactor
             ax = subaxes[idx]
             scaled_image(learnedFactor.reshape(6, 6), pixwidth=3, ax=ax)

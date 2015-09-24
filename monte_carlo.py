@@ -302,7 +302,7 @@ class MonteCarlo(object):
         #self._a_title = "A-matrix-";
         #self._hyper_parameter_vector_title = "Hyper-parameter-vector-";
         numpy.savetxt(os.path.join(directory, "A-matrix-%i" % self._counter), self._A);
-        numpy.savetxt(os.path.join(directory, "X-matrix-%i" % self._counter), self._X);
+        #numpy.savetxt(os.path.join(directory, "X-matrix-%i" % self._counter), self._X);
         numpy.savetxt(os.path.join(directory, "Z-matrix-%i" % self._counter), self._Z);
         vector = numpy.array([self._alpha, self._sigma_a, self._sigma_x]);
         numpy.savetxt(os.path.join(directory, "Hyperparameter-vector-%i" % self._counter), vector);
