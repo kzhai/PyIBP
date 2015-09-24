@@ -29,7 +29,7 @@ def parse_args():
                         snapshot_interval=10,
 
                         # parameter set 3
-                        alpha=1.,
+                        alpha_alpha=1.,
                         sigma_a=1.,
                         sigma_x=1.,
                         
@@ -57,8 +57,8 @@ def parse_args():
                       help="snapshot interval [10]");
                       
     # parameter set 3
-    parser.add_option("--alpha", type="float", dest="alpha",
-                      help="hyper-parameter for alpha [1.0]")
+    parser.add_option("--alpha_alpha", type="float", dest="alpha_alpha",
+                      help="hyper-parameter for alpha_alpha [1.0]")
     parser.add_option("--sigma_a", type="float", dest="sigma_a",
                       help="hyper-parameter for Sigma A [1.0]")
     parser.add_option("--sigma_x", type="float", dest="sigma_x",
@@ -66,7 +66,7 @@ def parse_args():
     
     # parameter set 4
     # parser.add_option("--disable_alpha_theta_update", action="store_true", dest="disable_alpha_theta_update",
-                      # help="disable alpha (hyper-parameter for Dirichlet distribution of topics) update");
+                      # help="disable alpha_alpha (hyper-parameter for Dirichlet distribution of topics) update");
     parser.add_option("--inference_mode", type="int", dest="inference_mode",
                       help="inference mode [ " +
                             "1 (default): monte carlo, " +
@@ -130,8 +130,8 @@ def main():
     print "successfully load all train_data from %s..." % (os.path.abspath(train_file_path));
     
     # parameter set 3
-    assert(options.alpha > 0);
-    alpha = options.alpha;
+    assert(options.alpha_alpha > 0);
+    alpha_alpha = options.alpha_alpha;
     assert(options.sigma_a > 0);
     sigma_a = options.sigma_a;
     assert(options.sigma_x > 0);
@@ -143,7 +143,7 @@ def main():
     suffix += "-%s" % ("ibp");
     suffix += "-I%d" % (training_iterations);
     suffix += "-S%d" % (snapshot_interval);
-    suffix += "-a%f" % (alpha);
+    suffix += "-a%f" % (alpha_alpha);
     suffix += "-sa%f" % (sigma_a);
     suffix += "-sx%f" % (sigma_x);
     suffix += "-im%d" % (inference_mode);
@@ -171,7 +171,7 @@ def main():
     options_output_file.write("snapshot_interval=" + str(snapshot_interval) + "\n");
     # options_output_file.write("number_of_topics=" + str(number_of_topics) + "\n");
     # parameter set 3
-    options_output_file.write("alpha=" + str(alpha) + "\n");
+    options_output_file.write("alpha_alpha=" + str(alpha_alpha) + "\n");
     options_output_file.write("sigma_a=" + str(sigma_a) + "\n");
     options_output_file.write("sigma_x=" + str(sigma_x) + "\n");
     # parameter set 4
@@ -193,7 +193,7 @@ def main():
     print "snapshot_interval=" + str(snapshot_interval);
     # print "number_of_topics=" + str(number_of_topics)
     # parameter set 3
-    print "alpha=" + str(alpha)
+    print "alpha_alpha=" + str(alpha_alpha)
     print "sigma_a=" + str(sigma_a)
     print "sigma_x=" + str(sigma_x)
     # parameter set 4
@@ -220,11 +220,11 @@ def main():
         else:
             sys.stderr.write("error: unrecognized sampler type %d...\n" % (sampler_type));
             return;
-        ibp_inferencer._initialize(train_data, alpha, sigma_a, sigma_x, initial_Z=None, A_prior=None);
+        ibp_inferencer._initialize(train_data, alpha_alpha, sigma_a, sigma_x, initial_Z=None, A_prior=None);
     elif inference_mode == 2:
         import variational_bayes
         ibp_inferencer = variational_bayes.VariationalBayes();
-        ibp_inferencer._initialize(train_data, truncation_level, alpha, sigma_a, sigma_x);
+        ibp_inferencer._initialize(train_data, truncation_level, alpha_alpha, sigma_a, sigma_x);
     else:
         sys.stderr.write("error: unrecognized inference mode %d...\n" % (inference_mode));
         return;
