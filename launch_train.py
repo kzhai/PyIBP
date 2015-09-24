@@ -209,7 +209,7 @@ def main():
         sys.stderr.write("error: unrecognized inference mode %d...\n" % (inference_mode));
         return;
     
-    ibp_inferencer._initialize(train_data[:100, :], sigma_a, sigma_x, initial_Z=None, A_prior=None);
+    ibp_inferencer._initialize(train_data, sigma_a, sigma_x, initial_Z=None, A_prior=None);
     
     for iteration in xrange(training_iterations):
         log_likelihood = ibp_inferencer.learning();
@@ -256,54 +256,3 @@ run IBP on the synthetic 'cambridge bars' dataset, used in the original paper.
 if __name__ == '__main__':
     main()
     
-    '''
-    # load the data from the matrix
-    mat_vals = scipy.io.loadmat('./cambridge-bars/block_image_set.mat');
-    true_weights = mat_vals['trueWeights']
-    features = mat_vals['features']
-    data = mat_vals['data']
-    
-    # set up the hyper-parameter for sampling alpha
-    alpha_hyper_parameter = (1., 1.);
-    # set up the hyper-parameter for sampling sigma_x
-    sigma_x_hyper_parameter = (1., 1.);
-    # set up the hyper-parameter for sampling sigma_a
-    sigma_a_hyper_parameter = (1., 1.);
-    
-    features = features.astype(numpy.int);
-    
-    # initialize the model
-    ibp = CollapsedGibbsSampling(alpha_hyper_parameter, sigma_x_hyper_parameter, sigma_a_hyper_parameter, True);
-
-    ibp._initialize(data[1:100, :], 0.5, 0.2, 0.5);
-    #ibp._initialize(data[0:1000, :], 1.0, 1.0, 1.0, None, features[0:1000, :]);
-    
-    #print ibp._Z, "\n", ibp._A_mean
-    ibp.sample(30);
-    
-    print ibp._Z.sum(axis=0)
-
-    # If matplotlib is installed, plot ground truth vs learned factors
-    import matplotlib.pyplot as P
-    from scaled_image import scaledimage
-    
-    # Intensity plots of
-    # -ground truth factor-feature weights (top)
-    # -learned factor-feature weights (bottom)
-    K = max(len(true_weights), len(ibp._A))
-    (fig, subaxes) = matplotlib.pyplot.subplots(2, K)
-    for sa in subaxes.flatten():
-        sa.set_visible(False)
-    fig.suptitle('Ground truth (top) vs learned factors (bottom)')
-    for (idx, trueFactor) in enumerate(true_weights):
-        ax = subaxes[0, idx]
-        ax.set_visible(True)
-        scaledimage(trueFactor.reshape(6, 6),
-                    pixwidth=3, ax=ax)
-    for (idx, learnedFactor) in enumerate(ibp._A):
-        ax = subaxes[1, idx]
-        scaledimage(learnedFactor.reshape(6, 6),
-                    pixwidth=3, ax=ax)
-        ax.set_visible(True)
-    matplotlib.pyplot.show()
-    '''
