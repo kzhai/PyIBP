@@ -23,20 +23,20 @@ To prepare the example dataset,
 
 	tar zxvf cambridge-bars.tar.gz
 
-To launch PyIBP, first redirect to the parent directory of PyIBP source code,
+To launch PyIBP, first redirect to the directory of PyIBP source code,
 
-	cd $PROJECT_SPACE/src/
+	cd $PROJECT_SPACE/src/PyIBP
 
 and run the following command on example dataset,
 
-	python -m PyIBP.launch_train --input_directory=./PyIBP/cambridge-bars --output_directory=./PyIBP/ --training_iterations=100
+	python -m launch_train --input_directory=./cambridge-bars --output_directory=./ --training_iterations=100
 
 The generic argument to run PyIBP is
 
-	python -m PyIBP.launch_train --input_directory=$INPUT_DIRECTORY/$DATASET_NAME --output_directory=$OUTPUT_DIRECTORY --training_iterations=$NUMBER_OF_ITERATIONS
+	python -m launch_train --input_directory=$INPUT_DIRECTORY/$DATASET_NAME --output_directory=$OUTPUT_DIRECTORY --training_iterations=$NUMBER_OF_ITERATIONS
 
 You should be able to find the output at directory ```$OUTPUT_DIRECTORY/$DATASET_NAME```.
 
 Under any cirsumstances, you may also get help information and usage hints by running the following command
 
-	python -m PyIBP.launch_train --help
+	python -m launch_train --help
